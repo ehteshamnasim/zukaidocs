@@ -1,0 +1,44 @@
+{
+  "theme": "professional",
+  "mermaidTheme": "default",
+  "codeTheme": "github",
+  
+  "pageSize": "A4",
+  "margins": {
+    "top": "0.6in",
+    "right": "0.6in",
+    "bottom": "0.6in",
+    "left": "0.6in"
+  },
+  
+  "coverPage": true,
+  "coverTitle": "STR Application",
+  "coverSubtitle": "Technical Documentation",
+  "coverAuthor": "Development Team",
+  "coverOrganization": "Kyndryl",
+  "coverLogo": "https://www.pngall.com/wp-content/uploads/17/Kyndryl-Logo-Design-Concept-PNG.png",
+  "coverVersion": "2.0",
+  "coverConfidential": false,
+  
+  "toc": true,
+  "tocTitle": "Table of Contents",
+  "tocMaxLevel": 3,
+  
+  "watermark": "CONFIDENTIAL",
+  "watermarkOpacity": 0.08,
+  
+  "showPageNumbers": true,
+  "pageNumberFormat": "pageXofY",
+  "headerText": "",
+  "footerText": "",
+  
+  "showLineNumbers": true,
+  "showGitInfo": false,
+  
+  "customCSS": "",
+  "pdfOutline": true,
+  
+  "printBackground": true,
+  "mathSupport": true,
+  "timeout": 90000
+}

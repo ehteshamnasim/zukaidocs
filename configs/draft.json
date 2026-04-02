@@ -1,0 +1,33 @@
+{
+  "theme": "professional",
+  "mermaidTheme": "default",
+  
+  "pageSize": "A4",
+  "margins": {
+    "top": "0.6in",
+    "right": "0.6in",
+    "bottom": "0.6in",
+    "left": "0.6in"
+  },
+  
+  "coverPage": true,
+  "coverTitle": "",
+  "coverSubtitle": "",
+  "coverAuthor": "",
+  "coverOrganization": "",
+  "coverLogo": "",
+  "coverVersion": "",
+  "coverConfidential": false,
+  
+  "toc": true,
+  "tocTitle": "Contents",
+  "tocMaxLevel": 2,
+  
+  "watermark": "DRAFT",
+  "watermarkOpacity": 0.1,
+  
+  "showPageNumbers": true,
+  "printBackground": true,
+  "mathSupport": true,
+  "timeout": 90000
+}

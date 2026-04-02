@@ -1,0 +1,21 @@
+{
+  "theme": "github",
+  "mermaidTheme": "default",
+  
+  "pageSize": "A4",
+  "margins": {
+    "top": "0.75in",
+    "right": "0.75in",
+    "bottom": "0.75in",
+    "left": "0.75in"
+  },
+  
+  "coverPage": false,
+  "toc": false,
+  "watermark": "",
+  
+  "showPageNumbers": true,
+  "printBackground": true,
+  "mathSupport": true,
+  "timeout": 60000
+}
