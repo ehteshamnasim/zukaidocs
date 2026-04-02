@@ -1,0 +1,97 @@
+{
+  "_comment": "=== THEME & STYLING ===",
+  "theme": "professional",
+  "_theme_options": "github | minimal | professional | academic",
+  
+  "mermaidTheme": "default",
+  "_mermaidTheme_options": "default | forest | dark | neutral",
+  
+  "codeTheme": "github",
+  "_codeTheme_options": "github | monokai | dracula | one-dark | github-dark",
+  
+  "mermaidScale": "auto",
+  "_mermaidScale_options": "auto | small | medium | large",
+  
+  "mermaidMaxHeight": 600,
+  "_mermaidMaxHeight_desc": "Max diagram height in pixels before auto-scaling",
+
+
+  "_comment2": "=== PAGE LAYOUT ===",
+  "pageSize": "A4",
+  "_pageSize_options": "A4 | Letter | Legal | Tabloid",
+  
+  "margins": {
+    "top": "0.6in",
+    "right": "0.6in",
+    "bottom": "0.6in",
+    "left": "0.6in"
+  },
+
+
+  "_comment3": "=== COVER PAGE ===",
+  "coverPage": true,
+  "_coverPage_desc": "Enable cover page with title, logo, metadata",
+  
+  "coverTitle": "Document Title",
+  "coverSubtitle": "Subtitle or Description",
+  "coverAuthor": "Author Name",
+  "coverOrganization": "Company Name",
+  "coverLogo": "https://example.com/logo.png",
+  "_coverLogo_desc": "URL or local path to logo image",
+  
+  "coverVersion": "1.0",
+  "coverConfidential": false,
+  "_coverConfidential_desc": "Shows red CONFIDENTIAL badge on cover",
+
+
+  "_comment4": "=== TABLE OF CONTENTS ===",
+  "toc": true,
+  "_toc_desc": "Auto-generate clickable table of contents",
+  
+  "tocTitle": "Table of Contents",
+  "tocMaxLevel": 3,
+  "_tocMaxLevel_desc": "Heading depth to include (1-6)",
+
+
+  "_comment5": "=== WATERMARK ===",
+  "watermark": "",
+  "_watermark_desc": "Text shown diagonally across all pages (empty = none)",
+  
+  "watermarkOpacity": 0.08,
+  "_watermarkOpacity_desc": "0.01 = barely visible, 0.2 = very visible",
+
+
+  "_comment6": "=== PAGE NUMBERS & HEADERS ===",
+  "showPageNumbers": true,
+  
+  "pageNumberFormat": "pageXofY",
+  "_pageNumberFormat_options": "numeric (1) | pageXofY (Page 1 of 10) | roman (i, ii, iii)",
+  
+  "headerText": "",
+  "footerText": "",
+
+
+  "_comment7": "=== DEVELOPER FEATURES ===",
+  "showLineNumbers": false,
+  "_showLineNumbers_desc": "Show line numbers in code blocks",
+  
+  "showGitInfo": false,
+  "_showGitInfo_desc": "Footer with git branch, commit, author, date",
+
+
+  "_comment8": "=== ADVANCED ===",
+  "customCSS": "",
+  "_customCSS_desc": "Path to CSS file or inline CSS string",
+  
+  "pdfOutline": true,
+  "_pdfOutline_desc": "Generate PDF bookmarks from headings",
+  
+  "printBackground": true,
+  "_printBackground_desc": "Include background colors in PDF",
+  
+  "mathSupport": true,
+  "_mathSupport_desc": "Enable KaTeX math equations ($...$)",
+  
+  "timeout": 90000,
+  "_timeout_desc": "Max render time in milliseconds"
+}
