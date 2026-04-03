@@ -1,0 +1,239 @@
+{
+  "name": "markdown-to-pdf-pro",
+  "displayName": "Markdown to PDF Pro",
+  "description": "Convert Markdown to beautiful PDFs with Mermaid diagram support, cover pages, TOC, and more",
+  "version": "1.0.0",
+  "publisher": "EhteshamNasim",
+  "author": "Ehtesham Nasim",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kyndryl-cto/md2pdf"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Formatters"
+  ],
+  "keywords": [
+    "markdown",
+    "pdf",
+    "mermaid",
+    "export",
+    "converter",
+    "documentation"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "md2pdf.exportToPdf",
+        "title": "Export to PDF",
+        "category": "md2pdf",
+        "icon": "$(file-pdf)"
+      },
+      {
+        "command": "md2pdf.exportWithConfig",
+        "title": "Export to PDF (Select Config)",
+        "category": "md2pdf"
+      },
+      {
+        "command": "md2pdf.createConfig",
+        "title": "Create Config File",
+        "category": "md2pdf"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "md2pdf.exportToPdf",
+          "when": "resourceLangId == markdown",
+          "group": "export@1"
+        },
+        {
+          "command": "md2pdf.exportWithConfig",
+          "when": "resourceLangId == markdown",
+          "group": "export@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "md2pdf.exportToPdf",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "md2pdf.exportToPdf",
+          "when": "resourceExtname == .md",
+          "group": "export@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "md2pdf",
+      "properties": {
+        "md2pdf.theme": {
+          "type": "string",
+          "default": "github",
+          "enum": ["github", "minimal", "professional", "academic"],
+          "description": "Document theme"
+        },
+        "md2pdf.codeTheme": {
+          "type": "string",
+          "default": "github",
+          "enum": ["github", "monokai", "dracula", "one-dark", "github-dark"],
+          "description": "Syntax highlighting theme for code blocks"
+        },
+        "md2pdf.mermaidTheme": {
+          "type": "string",
+          "default": "default",
+          "enum": ["default", "forest", "dark", "neutral"],
+          "description": "Mermaid diagram theme"
+        },
+        "md2pdf.mermaidScale": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "small", "medium", "large"],
+          "description": "Mermaid diagram sizing"
+        },
+        "md2pdf.pageSize": {
+          "type": "string",
+          "default": "A4",
+          "enum": ["A4", "Letter", "Legal", "Tabloid"],
+          "description": "PDF page size"
+        },
+        "md2pdf.coverPage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable cover page"
+        },
+        "md2pdf.coverTitle": {
+          "type": "string",
+          "default": "",
+          "description": "Cover page title (uses filename if empty)"
+        },
+        "md2pdf.coverAuthor": {
+          "type": "string",
+          "default": "",
+          "description": "Cover page author"
+        },
+        "md2pdf.coverOrganization": {
+          "type": "string",
+          "default": "",
+          "description": "Cover page organization"
+        },
+        "md2pdf.coverLogo": {
+          "type": "string",
+          "default": "",
+          "description": "Cover page logo URL or path"
+        },
+        "md2pdf.coverConfidential": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show CONFIDENTIAL badge on cover"
+        },
+        "md2pdf.coverSubtitle": {
+          "type": "string",
+          "default": "",
+          "description": "Cover page subtitle"
+        },
+        "md2pdf.coverVersion": {
+          "type": "string",
+          "default": "",
+          "description": "Cover page version number"
+        },
+        "md2pdf.toc": {
+          "type": "boolean",
+          "default": false,
+          "description": "Generate table of contents"
+        },
+        "md2pdf.tocMaxLevel": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 6,
+          "description": "TOC heading depth (1-6)"
+        },
+        "md2pdf.tocTitle": {
+          "type": "string",
+          "default": "Table of Contents",
+          "description": "TOC section title"
+        },
+        "md2pdf.watermark": {
+          "type": "string",
+          "default": "",
+          "description": "Watermark text (empty = no watermark)"
+        },
+        "md2pdf.watermarkOpacity": {
+          "type": "number",
+          "default": 0.08,
+          "minimum": 0.01,
+          "maximum": 0.5,
+          "description": "Watermark opacity"
+        },
+        "md2pdf.showPageNumbers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show page numbers"
+        },
+        "md2pdf.pageNumberFormat": {
+          "type": "string",
+          "default": "numeric",
+          "enum": ["numeric", "pageXofY", "roman"],
+          "description": "Page number format"
+        },
+        "md2pdf.showLineNumbers": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show line numbers in code blocks"
+        },
+        "md2pdf.showGitInfo": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show git info in footer"
+        },
+        "md2pdf.mathSupport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable KaTeX math support"
+        },
+        "md2pdf.outputDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Output directory for PDFs (empty = same as source)"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "md2pdf.exportToPdf",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "resourceLangId == markdown"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "echo 'No compile needed'",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.9.0",
+    "marked": "^12.0.0"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.22.0",
+    "puppeteer": "^22.0.0"
+  }
+}

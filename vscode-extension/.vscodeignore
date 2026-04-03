@@ -1,0 +1,11 @@
+.vscode/**
+.vscode-test/**
+.gitignore
+*.md
+!README.md
+*.vsix
+node_modules/puppeteer/**
+node_modules/puppeteer-core/**
+node_modules/@puppeteer/**
+node_modules/chromium-bidi/**
+node_modules/devtools-protocol/**

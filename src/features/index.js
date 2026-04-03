@@ -184,15 +184,17 @@ const generateWatermark = (options = {}) => {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) rotate(${rotation}deg);
-      font-size: ${fontSize};
+      font-size: 80px;
       color: ${color};
       opacity: ${opacity};
       z-index: 9999;
       pointer-events: none;
       white-space: nowrap;
       font-weight: bold;
-      letter-spacing: 8px;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     
     @media print {
@@ -201,14 +203,16 @@ const generateWatermark = (options = {}) => {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(${rotation}deg);
-        font-size: ${fontSize};
+        font-size: 80px;
         color: ${color};
         opacity: ${opacity};
         z-index: 9999;
         pointer-events: none;
         white-space: nowrap;
         font-weight: bold;
-        letter-spacing: 8px;
+        letter-spacing: 0.15em;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
     }
   `;

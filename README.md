@@ -31,6 +31,16 @@ A production-ready CLI tool for converting Markdown to beautiful PDFs with full 
 - 🎚️ **Size Presets** — small, medium, large, auto
 - 📏 **Max Height** — Prevent diagrams from creating white pages
 
+## VS Code Extension
+
+Also available as a VS Code extension! Install directly from the marketplace:
+
+**[Markdown to PDF Pro](https://marketplace.visualstudio.com/items?itemName=EhteshamNasim.markdown-to-pdf-pro)**
+
+- Right-click any `.md` file → **Export to PDF**
+- Keyboard shortcut: `Cmd+Shift+E` (Mac) / `Ctrl+Shift+E` (Windows)
+- All features from CLI available through VS Code settings
+
 ## Installation
 
 ```bash
