@@ -1,6 +1,6 @@
 # md2pdf
 
-A production-ready CLI tool for converting Markdown to beautiful PDFs with full **Mermaid diagram support**, designed for corporate documentation and developer workflows.
+A production-ready CLI tool and VS Code extension for converting Markdown to beautiful PDFs with full **Mermaid diagram support**, cover pages, table of contents, and more. Designed for corporate documentation and developer workflows.
 
 ## Features
 
