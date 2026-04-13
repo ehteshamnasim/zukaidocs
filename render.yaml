@@ -1,0 +1,16 @@
+# Render Blueprint - ZukaiDocs
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: zukaidocs
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
