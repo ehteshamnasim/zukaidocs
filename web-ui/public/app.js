@@ -5,6 +5,7 @@
 // DOM Elements
 const editor = document.getElementById('editor');
 const preview = document.getElementById('preview');
+const previewPanel = document.getElementById('previewPanel');
 const charCount = document.getElementById('charCount');
 const fileInput = document.getElementById('fileInput');
 const themeSelect = document.getElementById('themeSelect');
@@ -12,6 +13,7 @@ const formatSelect = document.getElementById('formatSelect');
 const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 const exportMermaidBtn = document.getElementById('exportMermaidBtn');
 const refreshPreview = document.getElementById('refreshPreview');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 const dropZone = document.getElementById('dropZone');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
@@ -46,17 +48,16 @@ function initMermaid() {
     fontFamily: 'Inter, system-ui, sans-serif',
     gantt: {
       useMaxWidth: false,
-      barHeight: 30,
-      barGap: 8,
-      topPadding: 60,
-      leftPadding: 150,
+      barHeight: 24,
+      barGap: 6,
+      topPadding: 50,
+      leftPadding: 260,
       rightPadding: 80,
-      gridLineStartPadding: 50,
-      fontSize: 12,
+      gridLineStartPadding: 40,
+      fontSize: 13,
       sectionFontSize: 13,
       numberSectionStyles: 4,
-      tickInterval: '1week',
-      axisFormat: '%b %d'
+      tickInterval: '1week'
     },
     flowchart: {
       useMaxWidth: false,
@@ -99,6 +100,9 @@ function setupEventListeners() {
   // Refresh preview
   refreshPreview.addEventListener('click', updatePreview);
 
+  // Fullscreen toggle
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+
   // Download PDF
   downloadPdfBtn.addEventListener('click', handleDownloadPdf);
 
@@ -107,6 +111,29 @@ function setupEventListeners() {
 
   // Keyboard shortcuts
   document.addEventListener('keydown', handleKeyboardShortcuts);
+}
+
+// Toggle fullscreen preview
+function toggleFullscreen() {
+  previewPanel.classList.toggle('fullscreen');
+  
+  // Update button title
+  const isFullscreen = previewPanel.classList.contains('fullscreen');
+  fullscreenBtn.title = isFullscreen ? 'Exit Fullscreen (Esc)' : 'Fullscreen Preview (F11)';
+  
+  // Add escape key handler when fullscreen
+  if (isFullscreen) {
+    document.addEventListener('keydown', handleFullscreenEscape);
+  } else {
+    document.removeEventListener('keydown', handleFullscreenEscape);
+  }
+}
+
+// Handle escape key in fullscreen
+function handleFullscreenEscape(e) {
+  if (e.key === 'Escape' && previewPanel.classList.contains('fullscreen')) {
+    toggleFullscreen();
+  }
 }
 
 // Setup drag and drop
@@ -248,9 +275,10 @@ async function updatePreview() {
     }
   });
 
-  // Rewrite local image paths to use API
-  html = html.replace(/src="\.\/images\//g, 'src="/api/image/images/');
-  html = html.replace(/src="images\//g, 'src="/api/image/images/');
+  // Rewrite local image paths to use local-images API
+  // Handle paths like ./schedule-images/..., ./images/..., relative paths
+  html = html.replace(/src="\.\/([^"]+\.(png|jpg|jpeg|gif|webp|svg))"/gi, 'src="/local-images/$1"');
+  html = html.replace(/src="([^\/"][^"]*\.(png|jpg|jpeg|gif|webp|svg))"/gi, 'src="/local-images/$1"');
 
   preview.innerHTML = html;
 
@@ -394,6 +422,12 @@ async function handleExportMermaid() {
 
 // Keyboard shortcuts
 function handleKeyboardShortcuts(e) {
+  // F11 = Toggle fullscreen
+  if (e.key === 'F11') {
+    e.preventDefault();
+    toggleFullscreen();
+  }
+  
   // Cmd/Ctrl + S = Download PDF
   if ((e.metaKey || e.ctrlKey) && e.key === 's') {
     e.preventDefault();

@@ -95,22 +95,23 @@ const getMermaidRenderHtml = (mermaidCode, options = {}) => {
   const ganttMetrics = isGantt ? parseGanttMetrics(mermaidCode) : null;
   const isComplexGantt = ganttMetrics?.isComplex || false;
   
-  // Calculate optimal width based on timeline - minimum 100px per week for readable dates
-  const pixelsPerWeek = isComplexGantt ? 120 : 120;
-  const labelWidth = isComplexGantt ? 280 : 180;
+  // Calculate optimal width based on timeline
+  // Complex Gantts need more width for readability in PDF
+  const pixelsPerWeek = isComplexGantt ? 180 : 120;
+  const labelWidth = isComplexGantt ? 300 : 180;
   const ganttWidth = ganttMetrics 
-    ? Math.max(1000, labelWidth + (ganttMetrics.weeksSpan * pixelsPerWeek) + 100)
+    ? Math.max(isComplexGantt ? 1600 : 1000, labelWidth + (ganttMetrics.weeksSpan * pixelsPerWeek) + 150)
     : 800;
   
   // Gantt-specific settings
   const ganttConfig = isGantt ? `
     gantt: {
       useMaxWidth: false,
-      barHeight: ${isComplexGantt ? 25 : 35},
-      barGap: ${isComplexGantt ? 6 : 8},
+      barHeight: ${isComplexGantt ? 28 : 35},
+      barGap: ${isComplexGantt ? 7 : 8},
       topPadding: 60,
-      leftPadding: ${isComplexGantt ? 280 : 180},
-      rightPadding: 50,
+      leftPadding: ${isComplexGantt ? 300 : 180},
+      rightPadding: 80,
       gridLineStartPadding: 50,
       fontSize: 13,
       sectionFontSize: 14,
@@ -228,11 +229,12 @@ const renderMermaidToPng = async (mermaidCode, options = {}) => {
   let viewportHeight = 800;
   
   if (isGantt && ganttMetrics) {
-    const pixelsPerWeek = isComplexGantt ? 120 : 120;
-    const labelWidth = isComplexGantt ? 280 : 180;
-    viewportWidth = Math.max(1200, labelWidth + (ganttMetrics.weeksSpan * pixelsPerWeek) + 150);
+    // Match the width calculation from getMermaidRenderHtml
+    const pixelsPerWeek = isComplexGantt ? 180 : 120;
+    const labelWidth = isComplexGantt ? 300 : 180;
+    viewportWidth = Math.max(isComplexGantt ? 1800 : 1200, labelWidth + (ganttMetrics.weeksSpan * pixelsPerWeek) + 200);
     // Increase height: more space per task and section for taller bars
-    viewportHeight = Math.max(500, 200 + (ganttMetrics.taskCount * 50) + (ganttMetrics.sectionCount * 60));
+    viewportHeight = Math.max(600, 250 + (ganttMetrics.taskCount * 45) + (ganttMetrics.sectionCount * 50));
   } else if (isSequence) {
     viewportWidth = 1600;
   }

@@ -22,7 +22,7 @@ const crypto = require('crypto');
 
 // Import md2pdf core modules
 const { markdownToPdfBuffer } = require('../src');
-const { exportMermaidImages, extractMermaidBlocks } = require('../src/mermaid-export');
+const { exportMermaidImages, extractMermaidBlocks, renderMermaidToPng } = require('../src/mermaid-export');
 const { renderToHtml } = require('../src/renderer');
 const { parseMarkdown } = require('../src/parser');
 const { resolveConfig } = require('../src/config');
@@ -36,8 +36,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 // ============================================
 const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100; // 100 requests per minute
-const RATE_LIMIT_MAX_CONVERTS = 10; // 10 PDF conversions per minute
+const RATE_LIMIT_MAX_REQUESTS = 200; // 200 requests per minute
+const RATE_LIMIT_MAX_CONVERTS = 30; // 30 PDF conversions per minute
 
 const rateLimit = (key, maxRequests) => {
   const now = Date.now();
@@ -361,13 +361,43 @@ app.post('/api/convert', rateLimitMiddleware(RATE_LIMIT_MAX_CONVERTS), upload.si
 
     // Validate and sanitize options
     const theme = validateTheme(req.body.theme) ? req.body.theme : 'github';
-    const format = validateFormat(req.body.format) ? req.body.format : 'A4';
+    
+    // Auto-detect Gantt charts and pre-render them as PNG for proper sizing
+    const hasGantt = /```mermaid[\s\S]*?gantt[\s\S]*?```/i.test(markdown);
+    
+    if (hasGantt) {
+      // Pre-render Gantt charts using the same engine as CLI
+      const blocks = extractMermaidBlocks(markdown);
+      for (const block of blocks) {
+        if (/^\s*gantt/im.test(block.code)) {
+          try {
+            const result = await renderMermaidToPng(block.code, {
+              theme: 'default',
+              backgroundColor: 'white',
+              scale: 2
+            });
+            // renderMermaidToPng returns { buffer, width, height }
+            const base64 = result.buffer.toString('base64');
+            // Replace mermaid block with embedded image
+            markdown = markdown.replace(
+              block.fullMatch,
+              `\n\n![Gantt Chart](data:image/png;base64,${base64})\n\n`
+            );
+          } catch (err) {
+            console.error('Gantt pre-render failed:', err.message);
+          }
+        }
+      }
+    }
+    
+    const format = hasGantt ? 'A3' : (validateFormat(req.body.format) ? req.body.format : 'A4');
+    const landscape = req.body.landscape === 'true' || hasGantt;
     
     const options = {
       theme,
       format,
-      landscape: req.body.landscape === 'true',
-      margin: req.body.margin || '20mm'
+      landscape,
+      margin: hasGantt ? '10mm' : (req.body.margin || '20mm')
     };
 
     // Convert to PDF using buffer API
@@ -491,6 +521,35 @@ app.post('/api/export-mermaid', rateLimitMiddleware(RATE_LIMIT_MAX_CONVERTS), up
  */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+/**
+ * GET /local-images/* - Serve images from workspace for local development
+ * This allows markdown files to reference local images
+ */
+app.get('/local-images/*', (req, res) => {
+  const imagePath = req.params[0];
+  
+  // Security: validate path
+  if (!imagePath || imagePath.includes('..') || path.isAbsolute(imagePath)) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
+  
+  // Serve from workspace root (parent of web-ui)
+  const fullPath = path.join(__dirname, '..', imagePath);
+  
+  if (!fs.existsSync(fullPath)) {
+    return res.status(404).json({ error: 'Image not found' });
+  }
+  
+  // Only allow image files
+  const ext = path.extname(fullPath).toLowerCase();
+  const allowedExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
+  if (!allowedExts.includes(ext)) {
+    return res.status(400).json({ error: 'Invalid file type' });
+  }
+  
+  res.sendFile(fullPath);
 });
 
 // Serve index.html for all other routes (SPA support)

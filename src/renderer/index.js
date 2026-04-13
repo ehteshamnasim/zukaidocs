@@ -146,13 +146,17 @@ const getMermaidScript = (options = {}) => {
             height: 40
           },
           gantt: {
-            useMaxWidth: true,
-            barHeight: 18,
-            barGap: 4,
-            topPadding: 30,
-            leftPadding: 50,
-            gridLineStartPadding: 25,
-            fontSize: ${scale.fontSize}
+            useMaxWidth: false,
+            barHeight: 24,
+            barGap: 6,
+            topPadding: 50,
+            leftPadding: 260,
+            rightPadding: 80,
+            gridLineStartPadding: 40,
+            fontSize: 13,
+            sectionFontSize: 13,
+            numberSectionStyles: 4,
+            tickInterval: '1week'
           },
           pie: {
             useMaxWidth: true,

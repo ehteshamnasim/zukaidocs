@@ -94,9 +94,12 @@ const generatePdf = async (html, outputPath, options = {}) => {
     browser = await launchBrowser();
     const page = await browser.newPage();
     
+    // Use much larger viewport for Gantt charts in A3 landscape
+    const isA3Landscape = opts.format === 'A3' && opts.landscape;
+    const viewportWidth = isA3Landscape ? 2400 : 1400;
     await page.setViewport({
-      width: 800,
-      height: 1100,
+      width: viewportWidth,
+      height: 1400,
       deviceScaleFactor: 2
     });
 
@@ -112,20 +115,28 @@ const generatePdf = async (html, outputPath, options = {}) => {
       stats.mermaidErrors = mermaidResult.state.errors || [];
     }
 
-    await page.evaluate(() => {
+    // For Gantt charts, don't constrain width
+    await page.evaluate((isA3L) => {
       document.querySelectorAll('.mermaid svg').forEach(svg => {
-        svg.style.maxWidth = '100%';
+        const isGantt = svg.querySelector('.grid') || svg.innerHTML.includes('section');
+        if (isGantt && isA3L) {
+          svg.style.maxWidth = 'none';
+          svg.style.width = 'auto';
+        } else {
+          svg.style.maxWidth = '100%';
+        }
         svg.style.height = 'auto';
         svg.style.display = 'block';
         svg.style.overflow = 'visible';
       });
-    });
+    }, isA3Landscape);
 
     await page.evaluate(() => new Promise(r => setTimeout(r, 500)));
 
     const pdfOptions = {
       path: outputPath,
       format: opts.format,
+      landscape: opts.landscape || false,
       margin: opts.margin,
       printBackground: opts.printBackground,
       displayHeaderFooter: opts.displayHeaderFooter,
@@ -173,9 +184,13 @@ const generatePdfBuffer = async (html, options = {}) => {
     browser = await launchBrowser();
     const page = await browser.newPage();
 
+    // Use much larger viewport for Gantt charts in A3 landscape
+    // A3 landscape is 420mm x 297mm = ~1587 x 1122 points at 96 DPI
+    const isA3Landscape = opts.format === 'A3' && opts.landscape;
+    const viewportWidth = isA3Landscape ? 2400 : 1400;
     await page.setViewport({
-      width: 800,
-      height: 1100,
+      width: viewportWidth,
+      height: 1400,
       deviceScaleFactor: 2
     });
 
@@ -185,10 +200,29 @@ const generatePdfBuffer = async (html, options = {}) => {
     });
 
     await waitForMermaid(page, opts.timeout);
+    
+    // For Gantt charts, don't constrain width - let PDF scaling handle it
+    await page.evaluate((isA3L) => {
+      document.querySelectorAll('.mermaid svg').forEach(svg => {
+        const isGantt = svg.querySelector('.grid') || svg.innerHTML.includes('section');
+        if (isGantt && isA3L) {
+          // Don't constrain Gantt width - let it use full space
+          svg.style.maxWidth = 'none';
+          svg.style.width = 'auto';
+        } else {
+          svg.style.maxWidth = '100%';
+        }
+        svg.style.height = 'auto';
+        svg.style.display = 'block';
+        svg.style.overflow = 'visible';
+      });
+    }, isA3Landscape);
+    
     await page.evaluate(() => new Promise(r => setTimeout(r, 500)));
 
     const buffer = await page.pdf({
       format: opts.format,
+      landscape: opts.landscape || false,
       margin: opts.margin,
       printBackground: opts.printBackground
     });

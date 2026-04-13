@@ -109,10 +109,18 @@ Drop a .md file anywhere to open it."></textarea>
         <div class="resize-handle" id="resizeHandle"></div>
 
         <!-- Preview Panel -->
-        <div class="panel preview-panel">
+        <div class="panel preview-panel" id="previewPanel">
           <div class="panel-header">
             <span>Preview</span>
             <div class="preview-actions">
+              <button id="fullscreenBtn" class="icon-btn" title="Fullscreen Preview (F11)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
               <button id="refreshPreview" class="icon-btn" title="Refresh Preview">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="23 4 23 10 17 10"></polyline>

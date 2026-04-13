@@ -122,12 +122,12 @@ html, body {
 }
 
 .btn-primary {
-  background: var(--accent-secondary);
+  background: #0969da;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2ea043;
+  background: #0550ae;
 }
 
 .btn-secondary {
@@ -149,14 +149,14 @@ html, body {
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  color: #0969da;
   cursor: pointer;
   transition: all var(--transition);
 }
 
 .icon-btn:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  background: rgba(9, 105, 218, 0.1);
+  color: #0550ae;
 }
 
 /* Select */
@@ -273,8 +273,10 @@ html, body {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: auto;
   background: white;
   color: #24292f;
+  width: 100%;
 }
 
 .preview-placeholder {
@@ -354,8 +356,10 @@ html, body {
 }
 
 .preview img {
-  max-width: 100%;
+  max-width: none;
+  width: 100%;
   height: auto;
+  display: block;
 }
 
 /* Mermaid in Preview */
@@ -366,12 +370,13 @@ html, body {
   padding: 20px;
   background: #fafafa;
   border-radius: 8px;
-  min-width: 600px;
+  width: 100%;
 }
 
 .preview .mermaid svg {
+  width: 100% !important;
   max-width: none !important;
-  min-width: 600px;
+  height: auto !important;
   display: block;
 }
 
@@ -397,14 +402,14 @@ html, body {
 /* Resize Handle */
 .resize-handle {
   width: 4px;
-  background: var(--border-color);
+  background: #0969da;
   cursor: col-resize;
   transition: background var(--transition);
 }
 
 .resize-handle:hover,
 .resize-handle.active {
-  background: var(--accent-primary);
+  background: #0550ae;
 }
 
 /* Drop Zone */
@@ -533,4 +538,75 @@ html, body {
     height: 4px;
     cursor: row-resize;
   }
+}
+
+/* Fullscreen Preview */
+.preview-panel.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: var(--bg-primary);
+  border-radius: 0;
+  border: none;
+}
+
+.preview-panel.fullscreen .panel-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.preview-panel.fullscreen .preview {
+  padding: 40px;
+  max-width: none;
+  width: 100%;
+  overflow: auto;
+}
+
+.preview-panel.fullscreen #fullscreenBtn svg {
+  transform: rotate(180deg);
+}
+
+/* Exit fullscreen button styling */
+.preview-panel.fullscreen .preview-actions {
+  gap: 12px;
+}
+
+.preview-panel.fullscreen #fullscreenBtn {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.preview-panel.fullscreen #fullscreenBtn:hover {
+  background: var(--accent-hover);
+}
+
+/* Fullscreen Mermaid - use full width */
+.preview-panel.fullscreen .preview .mermaid {
+  min-width: auto;
+  width: 100%;
+  max-width: none;
+  overflow-x: visible;
+}
+
+.preview-panel.fullscreen .preview .mermaid svg {
+  min-width: auto;
+  width: 100%;
+  max-width: none;
+}
+
+/* Images should fill available width */
+.preview p img {
+  width: 100%;
+  max-width: none;
+  display: block;
+}
+
+/* Gantt images specifically */
+.preview img[alt*="Gantt"],
+.preview img[src*="gantt"] {
+  width: 100%;
+  max-width: none;
 }
