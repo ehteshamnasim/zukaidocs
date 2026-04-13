@@ -56,7 +56,11 @@ function activate(context) {
     await createConfigFile();
   });
 
-  context.subscriptions.push(exportCommand, exportWithConfigCommand, createConfigCommand);
+  const exportMermaidCommand = vscode.commands.registerCommand('md2pdf.exportMermaid', async (uri) => {
+    await exportMermaidImages(uri);
+  });
+
+  context.subscriptions.push(exportCommand, exportWithConfigCommand, createConfigCommand, exportMermaidCommand);
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'md2pdf.exportToPdf';
@@ -1510,6 +1514,416 @@ function getFeatureCSS() {
       pre { page-break-inside: avoid; }
     }
   `;
+}
+
+// ============================================
+// Mermaid Export for GitBook Compatibility
+// ============================================
+
+async function exportMermaidImages(uri) {
+  try {
+    let filePath;
+    if (uri) {
+      filePath = uri.fsPath;
+    } else if (vscode.window.activeTextEditor) {
+      filePath = vscode.window.activeTextEditor.document.uri.fsPath;
+    } else {
+      vscode.window.showErrorMessage('No Markdown file selected');
+      return;
+    }
+
+    if (!filePath.endsWith('.md') && !filePath.endsWith('.markdown')) {
+      vscode.window.showErrorMessage('Please select a Markdown file');
+      return;
+    }
+
+    // Ask user for export options
+    const exportType = await vscode.window.showQuickPick([
+      { label: 'Export for GitBook', description: 'Create images and GitBook-compatible markdown', value: 'gitbook' },
+      { label: 'Export Images Only', description: 'Export Mermaid diagrams as PNG files', value: 'images-only' }
+    ], {
+      placeHolder: 'Select export type'
+    });
+
+    if (!exportType) return;
+
+    const config = vscode.workspace.getConfiguration('md2pdf');
+    const mermaidTheme = config.get('mermaidTheme') || 'default';
+
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: 'md2pdf - Exporting Mermaid Diagrams',
+      cancellable: false
+    }, async (progress) => {
+      
+      progress.report({ message: 'Reading file...' });
+      
+      const markdown = fs.readFileSync(filePath, 'utf-8');
+      
+      // Extract mermaid blocks
+      const mermaidBlocks = extractMermaidBlocksFromMarkdown(markdown);
+      
+      if (mermaidBlocks.length === 0) {
+        vscode.window.showInformationMessage('No Mermaid diagrams found in this file.');
+        return;
+      }
+
+      progress.report({ message: `Found ${mermaidBlocks.length} Mermaid diagram(s)...` });
+
+      const inputDir = path.dirname(filePath);
+      const inputName = path.basename(filePath, path.extname(filePath));
+      const imagesDir = path.join(inputDir, 'images');
+
+      // Create images directory if it doesn't exist
+      if (!fs.existsSync(imagesDir)) {
+        fs.mkdirSync(imagesDir, { recursive: true });
+      }
+
+      // Load puppeteer
+      if (!puppeteer) {
+        const puppeteerPaths = [
+          path.join(extensionPath, 'node_modules', 'puppeteer'),
+          'puppeteer'
+        ];
+        
+        let loaded = false;
+        for (const puppeteerPath of puppeteerPaths) {
+          try {
+            puppeteer = require(puppeteerPath);
+            loaded = true;
+            break;
+          } catch (e) {
+            // Try next path
+          }
+        }
+        
+        if (!loaded) {
+          const action = await vscode.window.showErrorMessage(
+            'Puppeteer is required. Install it now?',
+            'Install',
+            'Cancel'
+          );
+          
+          if (action === 'Install') {
+            progress.report({ message: 'Installing Puppeteer...' });
+            try {
+              const { exec } = require('child_process');
+              await new Promise((resolve, reject) => {
+                exec(`cd "${extensionPath}" && npm install puppeteer --save`, (error) => {
+                  if (error) reject(error);
+                  else resolve();
+                });
+              });
+              puppeteer = require(path.join(extensionPath, 'node_modules', 'puppeteer'));
+            } catch (installError) {
+              vscode.window.showErrorMessage('Failed to install Puppeteer.');
+              return;
+            }
+          } else {
+            return;
+          }
+        }
+      }
+
+      const results = [];
+      let transformedMarkdown = markdown;
+
+      // Process diagrams in reverse order to maintain string positions
+      for (let i = mermaidBlocks.length - 1; i >= 0; i--) {
+        const block = mermaidBlocks[i];
+        const diagramIndex = mermaidBlocks.length - 1 - i;
+        const diagramName = generateMermaidDiagramName(block.code, block.index);
+        
+        progress.report({ 
+          message: `Rendering diagram ${diagramIndex + 1}/${mermaidBlocks.length}: ${diagramName}...`,
+          increment: (100 / mermaidBlocks.length)
+        });
+
+        try {
+          const imagePath = path.join(imagesDir, `${diagramName}.png`);
+          const relativeImagePath = `./images/${diagramName}.png`;
+
+          // Render the diagram
+          await renderMermaidToPngFile(block.code, imagePath, {
+            theme: mermaidTheme,
+            backgroundColor: 'white',
+            scale: 2
+          });
+
+          // Generate image markdown reference
+          const caption = diagramName.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
+          const imageMarkdown = `![${caption}](${relativeImagePath})`;
+
+          // Replace mermaid block with image reference
+          transformedMarkdown = 
+            transformedMarkdown.slice(0, block.startPos) +
+            imageMarkdown +
+            transformedMarkdown.slice(block.endPos);
+
+          results.push({ name: diagramName, success: true, path: imagePath });
+
+        } catch (error) {
+          console.error(`Error rendering ${diagramName}:`, error);
+          
+          // Keep original mermaid block with error comment
+          const errorComment = `<!-- Mermaid export failed: ${error.message} -->\n${block.fullMatch}`;
+          transformedMarkdown = 
+            transformedMarkdown.slice(0, block.startPos) +
+            errorComment +
+            transformedMarkdown.slice(block.endPos);
+          
+          results.push({ name: diagramName, success: false, error: error.message });
+        }
+      }
+
+      // Write the transformed markdown for GitBook
+      if (exportType.value === 'gitbook') {
+        const outputMarkdownPath = path.join(inputDir, `${inputName}-gitbook.md`);
+        fs.writeFileSync(outputMarkdownPath, transformedMarkdown);
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      // Show result
+      let message = `Exported ${successCount} Mermaid diagram(s) to images/`;
+      if (failCount > 0) {
+        message += ` (${failCount} failed)`;
+      }
+      if (exportType.value === 'gitbook') {
+        message += `\nGitBook markdown: ${inputName}-gitbook.md`;
+      }
+
+      const action = await vscode.window.showInformationMessage(
+        message,
+        'Open Folder',
+        exportType.value === 'gitbook' ? 'Open Markdown' : null
+      ).then(a => a);
+
+      if (action === 'Open Folder') {
+        vscode.env.openExternal(vscode.Uri.file(imagesDir));
+      } else if (action === 'Open Markdown') {
+        const outputPath = path.join(inputDir, `${inputName}-gitbook.md`);
+        const doc = await vscode.workspace.openTextDocument(outputPath);
+        await vscode.window.showTextDocument(doc);
+      }
+    });
+
+  } catch (error) {
+    vscode.window.showErrorMessage(`md2pdf error: ${error.message}`);
+    console.error(error);
+  }
+}
+
+function extractMermaidBlocksFromMarkdown(markdown) {
+  const blocks = [];
+  const regex = /```mermaid\n([\s\S]*?)```/g;
+  let match;
+  let index = 0;
+
+  while ((match = regex.exec(markdown)) !== null) {
+    blocks.push({
+      fullMatch: match[0],
+      code: match[1].trim(),
+      index: index++,
+      startPos: match.index,
+      endPos: match.index + match[0].length
+    });
+  }
+
+  return blocks;
+}
+
+function generateMermaidDiagramName(code, index) {
+  // Try to extract diagram type
+  const typeMatch = code.match(/^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline)/m);
+  const type = typeMatch ? typeMatch[1].toLowerCase() : 'diagram';
+  
+  // Try to extract title
+  const titleMatch = code.match(/title\s+([^\n]+)/i);
+  const title = titleMatch ? titleMatch[1].trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) : null;
+  
+  if (title) {
+    return `${type}-${title}-${index + 1}`;
+  }
+  
+  return `${type}-${index + 1}`;
+}
+
+async function renderMermaidToPngFile(mermaidCode, outputPath, options = {}) {
+  const { 
+    theme = 'default', 
+    backgroundColor = 'white',
+    scale = 2
+  } = options;
+
+  // Detect diagram type to adjust viewport and settings
+  const isGantt = /^\s*gantt/im.test(mermaidCode);
+  const isSequence = /^\s*sequenceDiagram/im.test(mermaidCode);
+  
+  // Count tasks for Gantt to estimate needed width
+  const ganttTaskCount = isGantt ? (mermaidCode.match(/^\s+\w.*:/gm) || []).length : 0;
+  const estimatedWeeks = isGantt ? Math.max(12, ganttTaskCount) : 0;
+  
+  // Use much wider viewport for complex Gantt charts
+  let viewportWidth = 1200;
+  let viewportHeight = 800;
+  
+  if (isGantt) {
+    viewportWidth = Math.max(3000, 400 + (estimatedWeeks * 100));
+    viewportHeight = Math.max(1600, 200 + (ganttTaskCount * 30));
+  } else if (isSequence) {
+    viewportWidth = 1600;
+  }
+  
+  // Gantt-specific settings for better readability
+  const ganttConfig = isGantt ? `
+    gantt: {
+      useMaxWidth: false,
+      barHeight: 20,
+      barGap: 4,
+      topPadding: 80,
+      leftPadding: 250,
+      rightPadding: 100,
+      gridLineStartPadding: 50,
+      fontSize: 11,
+      sectionFontSize: 12,
+      numberSectionStyles: 4,
+      tickInterval: '1week',
+      weekday: 'monday'
+    },` : `gantt: { useMaxWidth: false },`;
+  
+  // Calculate minimum width for Gantt - each week needs about 100px
+  const ganttMinWidth = isGantt ? Math.max(2500, 250 + (estimatedWeeks * 100)) : 0;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      background: ${backgroundColor}; 
+      width: 100%;
+      min-height: 100vh;
+    }
+    body {
+      display: flex; 
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: ${isGantt ? '50px 80px' : '20px'};
+    }
+    #container { 
+      display: block;
+      ${isGantt ? `min-width: ${ganttMinWidth}px; width: ${ganttMinWidth}px;` : ''}
+    }
+    .mermaid { display: block; width: 100%; }
+    .mermaid svg { max-width: none !important; width: 100% !important; overflow: visible !important; }
+    .mermaid .titleText { font-size: 20px !important; font-weight: 600 !important; }
+    .mermaid .tick text { font-size: 11px !important; }
+    /* Force dark text on all Gantt task bars for readability */
+    .mermaid .taskText { fill: #1a1a1a !important; font-weight: 500 !important; }
+    .mermaid .taskTextOutsideRight, .mermaid .taskTextOutsideLeft { fill: #1a1a1a !important; }
+    /* Keep critical task text visible (white on red) */
+    .mermaid .task.crit .taskText, .mermaid .taskText.crit { fill: #ffffff !important; font-weight: 600 !important; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <pre class="mermaid">${mermaidCode}</pre>
+  </div>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: '${theme}',
+      securityLevel: 'loose',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      flowchart: { useMaxWidth: false, htmlLabels: true },
+      sequence: { useMaxWidth: false },
+      ${ganttConfig}
+      er: { useMaxWidth: false },
+      pie: { useMaxWidth: false }
+    });
+    
+    mermaid.run().then(() => {
+      const svg = document.querySelector('.mermaid svg');
+      if (svg && ${isGantt}) {
+        const container = document.getElementById('container');
+        svg.setAttribute('width', container.offsetWidth);
+        svg.style.minWidth = container.offsetWidth + 'px';
+      }
+      window.mermaidRendered = true;
+    }).catch(err => {
+      console.error('Mermaid error:', err);
+      window.mermaidError = err.message || String(err);
+      window.mermaidRendered = true;
+    });
+  </script>
+</body>
+</html>`;
+
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+
+  try {
+    const page = await browser.newPage();
+    
+    await page.setViewport({
+      width: viewportWidth,
+      height: viewportHeight,
+      deviceScaleFactor: scale
+    });
+
+    await page.setContent(html, {
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000
+    });
+
+    // Wait for Mermaid to render
+    await page.waitForFunction(() => window.mermaidRendered === true, { timeout: 30000 });
+    
+    // Check for errors
+    const mermaidError = await page.evaluate(() => window.mermaidError);
+    if (mermaidError) {
+      throw new Error(`Mermaid rendering error: ${mermaidError}`);
+    }
+
+    // Small delay
+    await page.evaluate(() => new Promise(r => setTimeout(r, 300)));
+
+    // Get the bounding box
+    const element = await page.$('#container');
+    if (!element) {
+      throw new Error('Could not find rendered diagram');
+    }
+
+    const boundingBox = await element.boundingBox();
+    if (!boundingBox) {
+      throw new Error('Could not get diagram dimensions');
+    }
+
+    // Add padding
+    const padding = 20;
+    const clip = {
+      x: Math.max(0, boundingBox.x - padding),
+      y: Math.max(0, boundingBox.y - padding),
+      width: boundingBox.width + (padding * 2),
+      height: boundingBox.height + (padding * 2)
+    };
+
+    // Save screenshot
+    await page.screenshot({
+      path: outputPath,
+      type: 'png',
+      clip
+    });
+
+  } finally {
+    await browser.close();
+  }
 }
 
 function deactivate() {}

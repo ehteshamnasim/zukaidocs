@@ -47,6 +47,12 @@
         "command": "md2pdf.createConfig",
         "title": "Create Config File",
         "category": "md2pdf"
+      },
+      {
+        "command": "md2pdf.exportMermaid",
+        "title": "Export Mermaid as Images (GitBook)",
+        "category": "md2pdf",
+        "icon": "$(symbol-misc)"
       }
     ],
     "menus": {
@@ -60,6 +66,11 @@
           "command": "md2pdf.exportWithConfig",
           "when": "resourceLangId == markdown",
           "group": "export@2"
+        },
+        {
+          "command": "md2pdf.exportMermaid",
+          "when": "resourceLangId == markdown",
+          "group": "export@3"
         }
       ],
       "editor/title": [
@@ -74,6 +85,11 @@
           "command": "md2pdf.exportToPdf",
           "when": "resourceExtname == .md",
           "group": "export@1"
+        },
+        {
+          "command": "md2pdf.exportMermaid",
+          "when": "resourceExtname == .md",
+          "group": "export@2"
         }
       ]
     },

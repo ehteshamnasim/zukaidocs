@@ -30,6 +30,7 @@ const { renderToHtml } = require('../renderer');
 const { generatePdf, PAGE_FORMATS } = require('../pdf');
 const { resolveConfig, validateConfig, generateSampleConfig, listConfigs, getConfigsDir } = require('../config');
 const { watchFiles } = require('./watch');
+const { exportMermaidImages, exportMermaidImagesOnly } = require('../mermaid-export');
 
 const convertFile = async (inputPath, outputPath, config, spinner) => {
   const absoluteInput = path.resolve(inputPath);
@@ -355,6 +356,109 @@ program
     generateSampleConfig(configPath);
     console.log(chalk.green(`Created config: ${configPath}`));
     console.log(chalk.dim(`Edit this file to customize, then run: md2pdf <file.md> -c ${name}`));
+  });
+
+// Export Mermaid diagrams as PNG images (for GitBook compatibility)
+program
+  .command('export-mermaid <file>')
+  .description('Export Mermaid diagrams as PNG images for GitBook compatibility')
+  .option('-o, --output <dir>', 'Output directory for images and markdown')
+  .option('--images-dir <dir>', 'Subdirectory for images (default: images)', 'images')
+  .option('--theme <theme>', 'Mermaid theme (default, dark, forest, neutral)', 'default')
+  .option('--bg, --background <color>', 'Background color (white, transparent)', 'white')
+  .option('--scale <n>', 'Image scale factor (1-4)', '2')
+  .option('--prefix <prefix>', 'Prefix for image filenames', '')
+  .option('--images-only', 'Export images only, do not create modified markdown')
+  .action(async (file, options) => {
+    const startTime = Date.now();
+    const absolutePath = path.resolve(file);
+    
+    if (!fs.existsSync(absolutePath)) {
+      console.error(chalk.red(`File not found: ${absolutePath}`));
+      process.exit(1);
+    }
+
+    console.log(chalk.cyan('\n📊 Exporting Mermaid diagrams...\n'));
+    console.log(chalk.dim(`Source: ${absolutePath}`));
+    
+    const spinner = ora({
+      text: 'Scanning for Mermaid diagrams...',
+      color: 'cyan'
+    }).start();
+
+    try {
+      const exportOptions = {
+        outputDir: options.output || null,
+        imageDir: options.imagesDir,
+        theme: options.theme,
+        backgroundColor: options.background,
+        scale: parseInt(options.scale, 10) || 2,
+        prefix: options.prefix
+      };
+
+      const progressCallback = (progress) => {
+        spinner.text = `Rendering diagram ${progress.current}/${progress.total}: ${progress.diagramName}`;
+      };
+
+      let result;
+      if (options.imagesOnly) {
+        result = await exportMermaidImagesOnly(absolutePath, exportOptions, progressCallback);
+      } else {
+        result = await exportMermaidImages(absolutePath, exportOptions, progressCallback);
+      }
+
+      if (result.imagesExported === 0 && result.imagesFailed === 0) {
+        spinner.info(chalk.yellow('No Mermaid diagrams found in the file'));
+        return;
+      }
+
+      if (result.success) {
+        spinner.succeed(chalk.green('Export complete!'));
+      } else {
+        spinner.warn(chalk.yellow('Export completed with some errors'));
+      }
+
+      console.log('');
+      console.log(chalk.dim(`  Images exported: ${result.imagesExported}`));
+      if (result.imagesFailed > 0) {
+        console.log(chalk.yellow(`  Failed: ${result.imagesFailed}`));
+      }
+      console.log(chalk.dim(`  Images directory: ${result.imagesDir}`));
+      
+      if (!options.imagesOnly && result.outputMarkdownPath) {
+        console.log(chalk.dim(`  GitBook markdown: ${result.outputMarkdownPath}`));
+      }
+
+      const totalTime = Date.now() - startTime;
+      console.log(chalk.dim(`  Time: ${(totalTime / 1000).toFixed(2)}s`));
+      console.log('');
+
+      // Show details of exported images
+      if (result.results && result.results.length > 0) {
+        console.log(chalk.cyan('Exported diagrams:'));
+        result.results.forEach(r => {
+          if (r.success) {
+            console.log(chalk.green(`  ✓ ${r.name}.png`));
+          } else {
+            console.log(chalk.red(`  ✗ ${r.name}: ${r.error}`));
+          }
+        });
+        console.log('');
+      }
+
+      if (!options.imagesOnly) {
+        console.log(chalk.cyan('Usage for GitBook:'));
+        console.log(chalk.dim(`  Use ${path.basename(result.outputMarkdownPath)} which has image references instead of mermaid blocks.`));
+        console.log('');
+      }
+
+    } catch (error) {
+      spinner.fail(chalk.red(`Export failed: ${error.message}`));
+      if (process.env.DEBUG) {
+        console.error(error);
+      }
+      process.exit(1);
+    }
   });
 
 program.parse();

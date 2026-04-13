@@ -77,7 +77,35 @@ md2pdf init                   # Create config in current dir
 md2pdf new-config <name>      # Create config in configs/
 md2pdf configs                # List available configs
 md2pdf themes                 # List available themes
+
+# Export Mermaid diagrams as PNG (for GitBook)
+md2pdf export-mermaid <file.md>                    # Export to images/ and create gitbook markdown
+md2pdf export-mermaid <file.md> --images-only      # Export images only
+md2pdf export-mermaid <file.md> --theme forest     # Use forest Mermaid theme
+md2pdf export-mermaid <file.md> --images-dir docs  # Custom images directory
 ```
+
+## GitBook Compatibility
+
+GitBook doesn't support Mermaid diagrams natively. Use the `export-mermaid` command to convert Mermaid blocks to PNG images:
+
+```bash
+md2pdf export-mermaid document.md
+```
+
+This creates:
+- `images/*.png` — PNG images for each Mermaid diagram
+- `document-gitbook.md` — New markdown with image references instead of mermaid blocks
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--images-only` | Export images without creating new markdown |
+| `--images-dir <dir>` | Output subdirectory for images (default: `images`) |
+| `--theme <theme>` | Mermaid theme: default, dark, forest, neutral |
+| `--background <color>` | Background color: white, transparent |
+| `--scale <n>` | Image scale factor 1-4 (default: 2) |
+| `--prefix <prefix>` | Filename prefix for exported images |
 
 ## YAML Frontmatter
 

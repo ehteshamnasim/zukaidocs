@@ -22,6 +22,7 @@ const { parseMarkdown, extractMermaidBlocks, extractFrontmatter, getMarkdownStat
 const { renderToHtml, getMermaidScript } = require('./renderer');
 const { generatePdf, generatePdfBuffer, PAGE_FORMATS } = require('./pdf');
 const { resolveConfig, validateConfig, DEFAULT_CONFIG } = require('./config');
+const { exportMermaidImages, exportMermaidImagesOnly, renderMermaidToPng } = require('./mermaid-export');
 
 const markdownToPdfBuffer = async (markdown, options = {}) => {
   const config = resolveConfig(options);
@@ -70,5 +71,10 @@ module.exports = {
   
   resolveConfig,
   validateConfig,
-  DEFAULT_CONFIG
+  DEFAULT_CONFIG,
+  
+  // Mermaid export for GitBook compatibility
+  exportMermaidImages,
+  exportMermaidImagesOnly,
+  renderMermaidToPng
 };

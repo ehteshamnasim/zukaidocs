@@ -9,6 +9,7 @@
  *   - KaTeX math equation support
  *   - Code syntax themes (github, monokai, dracula, etc.)
  *   - Git info footer
+ *   - Local image embedding as base64
  */
 
 const fs = require('fs');
@@ -25,6 +26,55 @@ const {
   getFeatureCSS,
   getCodeThemeCSS
 } = require('../features');
+
+/**
+ * Convert local image references in HTML to base64 data URIs
+ * This ensures images work in Puppeteer's setContent() which doesn't resolve file:// URLs
+ */
+const embedLocalImages = (html, basePath) => {
+  // Match img tags with src attributes
+  const imgRegex = /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi;
+  
+  return html.replace(imgRegex, (match, before, src, after) => {
+    // Skip data URIs and remote URLs
+    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+      return match;
+    }
+    
+    // Resolve the image path
+    let imagePath;
+    if (src.startsWith('/')) {
+      imagePath = src;
+    } else if (src.startsWith('./') || src.startsWith('../') || !src.includes('://')) {
+      imagePath = path.resolve(basePath, src);
+    } else {
+      return match; // Unknown format, leave as is
+    }
+    
+    // Check if file exists and embed as base64
+    try {
+      if (fs.existsSync(imagePath)) {
+        const imageBuffer = fs.readFileSync(imagePath);
+        const ext = path.extname(imagePath).toLowerCase();
+        const mimeTypes = {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.svg': 'image/svg+xml'
+        };
+        const mimeType = mimeTypes[ext] || 'image/png';
+        const base64 = imageBuffer.toString('base64');
+        return `<img${before}src="data:${mimeType};base64,${base64}"${after}>`;
+      }
+    } catch (err) {
+      console.warn(`Warning: Could not embed image ${imagePath}: ${err.message}`);
+    }
+    
+    return match;
+  });
+};
 
 const getMermaidScript = (options = {}) => {
   const {
@@ -297,6 +347,9 @@ const renderToHtml = (content, options = {}) => {
     });
   }
 
+  // Embed local images as base64 for Puppeteer compatibility
+  const contentWithEmbeddedImages = embedLocalImages(processedContent, basePath);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -322,7 +375,7 @@ const renderToHtml = (content, options = {}) => {
   ${coverHtml}
   ${tocHtml}
   <div class="container">
-    ${processedContent}
+    ${contentWithEmbeddedImages}
     ${gitInfoHtml}
   </div>
 </body>
@@ -334,5 +387,6 @@ module.exports = {
   getMermaidScript,
   loadTheme,
   extractHeadings,
-  addHeadingIds
+  addHeadingIds,
+  embedLocalImages
 };

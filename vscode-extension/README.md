@@ -41,6 +41,17 @@
 - **Context Menu:** Right-click → "Export to PDF"
 - **Command Palette:** Cmd+Shift+P → "md2pdf: Export to PDF"
 
+### Export Mermaid for GitBook
+
+GitBook doesn't support Mermaid diagrams natively. Use this feature to export Mermaid blocks as PNG images:
+
+1. **Context Menu:** Right-click → "Export Mermaid as Images (GitBook)"
+2. **Command Palette:** Cmd+Shift+P → "md2pdf: Export Mermaid as Images"
+
+This creates:
+- `images/*.png` — PNG images for each Mermaid diagram
+- `yourfile-gitbook.md` — New markdown with image references instead of mermaid blocks
+
 ---
 
 ## ⚙️ Configuration

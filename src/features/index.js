@@ -308,6 +308,27 @@ const getFeatureCSS = () => {
       padding: 0;
     }
 
+    /* Diagram Images (exported PNGs) - Consistent sizing */
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1em auto;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    
+    /* Prevent images from causing excess white space */
+    p > img:only-child,
+    p > a > img:only-child {
+      display: block;
+      margin: 1.5em auto;
+      max-height: 70vh;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
     /* Mermaid Diagrams - Prevent Page Breaks */
     .mermaid-wrapper {
       page-break-inside: avoid;
