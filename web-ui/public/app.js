@@ -448,12 +448,16 @@ async function handleExportMermaid() {
       })
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Export failed');
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server error - please try again');
     }
 
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Export failed');
+    }
 
     if (data.images && data.images.length > 0) {
       // Download each image

@@ -1,6 +1,12 @@
-# md2pdf
+# ZukaiDocs (図解)
 
-A production-ready CLI tool and VS Code extension for converting Markdown to beautiful PDFs with full **Mermaid diagram support**, cover pages, table of contents, and more. Designed for corporate documentation and developer workflows.
+A production-ready CLI tool, Web UI, and VS Code extension for converting Markdown to beautiful PDFs with full **Mermaid diagram support**, cover pages, table of contents, and more. Designed for corporate documentation and developer workflows.
+
+> *Zukai (図解)* — Japanese for "diagram" or "illustration" — perfectly captures what this tool does: transform your markdown into beautifully illustrated documents.
+
+## Live Demo
+
+Try ZukaiDocs online: **[zukaidocs.onrender.com](https://zukaidocs.onrender.com)**
 
 ## Features
 
@@ -30,6 +36,18 @@ A production-ready CLI tool and VS Code extension for converting Markdown to bea
 - 📐 **Auto-scaling** — Diagrams scale to fit page
 - 🎚️ **Size Presets** — small, medium, large, auto
 - 📏 **Max Height** — Prevent diagrams from creating white pages
+
+## Web UI
+
+ZukaiDocs includes a modern web interface for browser-based conversion:
+
+```bash
+cd web-ui
+npm install
+npm start
+```
+
+Open http://localhost:3000 — paste markdown, preview with Mermaid diagrams, and download PDF.
 
 ## VS Code Extension
 
@@ -288,6 +306,10 @@ showGitInfo: true
 toc: true
 ---
 ```
+
+## Author
+
+Created by **Ehtesham Nasim**
 
 ## License
 

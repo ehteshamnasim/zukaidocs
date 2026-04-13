@@ -9,9 +9,11 @@
  *   - Optional header/footer templates with page numbers
  *   - Buffer generation for streaming
  *   - Browser preview mode for development
+ *   - Browser pooling for performance
  */
 
 const puppeteer = require('puppeteer');
+const { getPage, releasePage } = require('../browser-pool');
 
 const PAGE_FORMATS = {
   A4: { width: '210mm', height: '297mm' },
@@ -88,11 +90,10 @@ const generatePdf = async (html, outputPath, options = {}) => {
     pageCount: 0
   };
 
-  let browser;
+  let page;
   
   try {
-    browser = await launchBrowser();
-    const page = await browser.newPage();
+    page = await getPage();
     
     // Use much larger viewport for Gantt charts in A3 landscape
     const isA3Landscape = opts.format === 'A3' && opts.landscape;
@@ -170,19 +171,16 @@ const generatePdf = async (html, outputPath, options = {}) => {
     throw error;
 
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    await releasePage(page);
   }
 };
 
 const generatePdfBuffer = async (html, options = {}) => {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  let browser;
+  let page;
 
   try {
-    browser = await launchBrowser();
-    const page = await browser.newPage();
+    page = await getPage();
 
     // Use much larger viewport for Gantt charts in A3 landscape
     // A3 landscape is 420mm x 297mm = ~1587 x 1122 points at 96 DPI
@@ -230,9 +228,7 @@ const generatePdfBuffer = async (html, options = {}) => {
     return buffer;
 
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    await releasePage(page);
   }
 };
 

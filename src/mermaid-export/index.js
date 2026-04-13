@@ -7,11 +7,13 @@
  *   - Render each diagram to PNG using Puppeteer
  *   - Generate GitBook-compatible markdown with image references
  *   - Configurable output directory and naming
+ *   - Browser pooling for performance
  */
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const { getPage, releasePage } = require('../browser-pool');
 
 /**
  * Extract all mermaid code blocks from markdown content
@@ -239,19 +241,10 @@ const renderMermaidToPng = async (mermaidCode, options = {}) => {
     viewportWidth = 1600;
   }
 
-  let browser;
+  let page;
   
   try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage'
-      ]
-    });
-
-    const page = await browser.newPage();
+    page = await getPage();
     
     await page.setViewport({
       width: viewportWidth,
@@ -312,9 +305,7 @@ const renderMermaidToPng = async (mermaidCode, options = {}) => {
     };
 
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    await releasePage(page);
   }
 };
 
