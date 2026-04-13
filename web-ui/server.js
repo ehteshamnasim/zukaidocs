@@ -280,6 +280,21 @@ app.get('/api/themes', (req, res) => {
 });
 
 /**
+ * GET /api/theme/:name - Get theme CSS content
+ */
+app.get('/api/theme/:name', (req, res) => {
+  const themeName = req.params.name.replace(/[^a-z]/g, '');
+  const themePath = path.join(__dirname, `../src/themes/${themeName}.css`);
+  
+  if (!fs.existsSync(themePath)) {
+    return res.status(404).json({ error: 'Theme not found' });
+  }
+  
+  const css = fs.readFileSync(themePath, 'utf-8');
+  res.type('text/css').send(css);
+});
+
+/**
  * GET /api/configs - List available configs
  */
 app.get('/api/configs', (req, res) => {

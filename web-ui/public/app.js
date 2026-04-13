@@ -1,5 +1,5 @@
 /**
- * md2pdf Web UI - Frontend Application
+ * MarkFlow Web UI - Frontend Application
  */
 
 // DOM Elements
@@ -19,10 +19,14 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
 const toastContainer = document.getElementById('toastContainer');
 const resizeHandle = document.getElementById('resizeHandle');
+const aboutBtn = document.getElementById('aboutBtn');
+const aboutModal = document.getElementById('aboutModal');
+const closeAboutBtn = document.getElementById('closeAboutBtn');
 
 // State
 let previewTimeout = null;
 const PREVIEW_DELAY = 300;
+let themeCache = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load sample content if editor is empty
   if (!editor.value.trim()) {
     editor.value = getSampleMarkdown();
+    updateCharCount();
     updatePreview();
   }
 });
@@ -78,9 +83,48 @@ async function loadThemes() {
     themeSelect.innerHTML = data.themes.map(theme => 
       `<option value="${theme}">${theme.charAt(0).toUpperCase() + theme.slice(1)} Theme</option>`
     ).join('');
+    
+    // Pre-load first theme
+    await loadThemeCSS(themeSelect.value);
   } catch (error) {
     console.log('Using default themes');
   }
+}
+
+// Load and cache theme CSS
+async function loadThemeCSS(themeName) {
+  if (themeCache[themeName]) {
+    return themeCache[themeName];
+  }
+  
+  try {
+    const response = await fetch(`/api/theme/${themeName}`);
+    if (response.ok) {
+      const css = await response.text();
+      themeCache[themeName] = css;
+      return css;
+    }
+  } catch (error) {
+    console.log('Could not load theme:', themeName);
+  }
+  return '';
+}
+
+// Apply theme CSS to preview
+function applyThemeToPreview(css) {
+  let styleEl = document.getElementById('preview-theme-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'preview-theme-style';
+    document.head.appendChild(styleEl);
+  }
+  
+  // Scope the CSS to .preview
+  const scopedCSS = css
+    .replace(/body\s*\{/g, '.preview {')
+    .replace(/html\s*\{/g, '.preview {');
+  
+  styleEl.textContent = scopedCSS;
 }
 
 // Setup event listeners
@@ -108,6 +152,13 @@ function setupEventListeners() {
 
   // Export Mermaid
   exportMermaidBtn.addEventListener('click', handleExportMermaid);
+
+  // About modal
+  aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+  closeAboutBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
+  aboutModal.addEventListener('click', (e) => {
+    if (e.target === aboutModal) aboutModal.classList.add('hidden');
+  });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -262,6 +313,11 @@ async function updatePreview() {
     `;
     return;
   }
+
+  // Load and apply selected theme
+  const selectedTheme = themeSelect.value;
+  const themeCSS = await loadThemeCSS(selectedTheme);
+  applyThemeToPreview(themeCSS);
 
   // Convert markdown to HTML using Marked
   let html = marked.parse(markdown, {
@@ -469,7 +525,7 @@ function showToast(message, type = 'info') {
 
 // Sample markdown content
 function getSampleMarkdown() {
-  return `# Welcome to md2pdf
+  return `# Welcome to ZukaiDocs
 
 This is a **live preview** editor for converting Markdown to PDF.
 
